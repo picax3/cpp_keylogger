@@ -54,7 +54,7 @@ namespace Base64
         std::string salt2 = generate_salt(10);
         std::string salt3 = generate_salt(15);
         // build the string with salts
-        s = salt1 + s + salt2 + salt3;
+        s = base64_encode(s  + salt2 + salt3 + salt1);
         s = base64_encode(s);
         // add under salt
         s.insert(7, salt3);
@@ -66,8 +66,41 @@ namespace Base64
         s.insert(7, "M");
         return s; 
         }
-}
 
+        static const std::string &BASE64_CODES = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+        std::string base64_encode (const std::string &s) // const reference to a string. parameter passed to a function
+        {
+            std::string ret; // output string. fill it with encoded char characters
+            int val = 0;
+            // standard way of encrypting base64
+            int bits = -6; // number of bits in a sub group. groups of 6
+            const unsigned int b63 = 0x3F; // 63 = 3F, 0x says its a hexidecimal
+            // for each loop. itirate thru string s.
+            for(const auto &c : s) // use auto when u dont know the type of variable. c will b assigned every character from s tring
+            {
+                val = (val << 8) + c; // resulting numbers are shifted left by 8 places
+                // val = val * 2^8 // statemen is the same
+                bits += 8; // base64 works with octates when working with string
+                while(bits >= 0)
+                {
+                    ret.push_back(BASE64_CODES[(val >> bits) & 63]);
+                    bits -= 6; // decreasing number of bits by six. 
+                }  
+            }
+        
+            if (bits > -6) {// if one character inserted
+                ret.push_back(BASE64_CODES[((val << 8) >> (bits + 8)) & b63]);
+                // if ret size not aligned we have padding
+            }
+
+            while(ret.size() % 4) {
+                ret.push_back('=');
+            }
+
+            return ret;
+        }
+}
 #endif
 // BASE64 algorithm research transfer bytes to string
 // 64 characters 62 and 63 plus and slash starts with 0 padding sign equal transferred via email w/out losing data
